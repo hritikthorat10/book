@@ -1,50 +1,51 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 24 13:01:17 2020
+import streamlit as st
+import pickle
 
-"""
-
-
-
-import pandas as pd
-import streamlit as st 
-from sklearn.linear_model import LogisticRegression
-from pickle import dump
-from pickle import load
-
-st.title('Model Deployment: Logistic Regression')
-
-st.sidebar.header('User Input Parameters')
-
-def user_input_features():
-    CLMSEX = st.sidebar.selectbox('Gender',('1','0'))
-    CLMINSUR = st.sidebar.selectbox('Insurance',('1','0'))
-    SEATBELT = st.sidebar.selectbox('SeatBelt',('1','0'))
-    CLMAGE = st.sidebar.number_input("Insert the Age")
-    LOSS = st.sidebar.number_input("Insert Loss")
-    data = {'CLMSEX':CLMSEX,
-            'CLMINSUR':CLMINSUR,
-            'SEATBELT':SEATBELT,
-            'CLMAGE':CLMAGE,
-            'LOSS':LOSS}
-    features = pd.DataFrame(data,index = [0])
-    return features 
-    
-df = user_input_features()
-st.subheader('User Input parameters')
-st.write(df)
+st.title('Book Recommendation Engine   ( Group 6) ')
+df = pickle.load(open(r"C:\Users\saurav\OneDrive\Desktop\Data Science\Project-279\Files_p279\df.pkl", "rb"))
+model = pickle.load(open(r"C:\Users\saurav\OneDrive\Desktop\Data Science\Project-279\Files_p279\model.pkl", "rb"))
+data = pickle.load(open(r"C:\Users\saurav\OneDrive\Desktop\Data Science\Project-279\Files_p279\data.pkl", "rb"))
 
 
-# load the model from disk
-loaded_model = load(open('Logistic_Model.sav', 'rb'))
+def recommend(books):
+    recommended_book_names = []
+    distances, indices = model.kneighbors(df.loc[books].values.reshape(1, -1), n_neighbors=10)
+    print("\nRecommended books:\n")
+    for i in range(0, len(distances.flatten())):
+        if i > 0:
+            recommended_book_names.append(df.index[indices.flatten()[i]])
+    return recommended_book_names
 
-prediction = loaded_model.predict(df)
-prediction_proba = loaded_model.predict_proba(df)
 
-st.subheader('Predicted Result')
-st.write('Yes' if prediction_proba[0][1] > 0.5 else 'No')
+users = data['User-ID'].values
+Users_book = st.selectbox('Select a books from drop down', users)
+selected_user_id = data[data["User-ID"] == Users_book].sort_values('Book-Rating', ascending=False).head(1)
+selected_book = selected_user_id['Book-Title'].values
 
-st.subheader('Prediction Probability')
-st.write(prediction_proba)
+st.write('You selected:', Users_book)
 
+
+if st.button('Show Recommend book'):
+    recommended_book = recommend(selected_book)
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.markdown(recommended_book[0])
+
+    with col2:
+        st.markdown(recommended_book[1])
+
+    with col3:
+        st.markdown(recommended_book[2])
+
+    with col4:
+        st.markdown(recommended_book[3])
+
+    with col5:
+        st.markdown(recommended_book[4])
+ # Use the full page instead of a narrow central column
+    #st.set_page_config(layout="wide")
+
+    # Space out the maps so the first one is 2x the size of the other three
+    #col1, col2, col3, col4,col5 = st.columns((2, 1, 1, 1,1))
 
